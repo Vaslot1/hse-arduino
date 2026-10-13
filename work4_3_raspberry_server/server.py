@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Работа 4: HTTP-команды для BME280 и WS2812B на Raspberry Pi 5."""
+"""Работа 4: HTTP-команды для BME280/BMP280 и WS2812B на Raspberry Pi 5."""
 
 import argparse
 import logging
@@ -9,6 +9,7 @@ import threading
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
+from typing import Optional
 
 LOG = logging.getLogger("voicehome")
 COMMANDS = {"temperature", "pressure", "humidity", "weather", "random", "health"}
@@ -19,7 +20,7 @@ COLOR = re.compile(r"[0-9a-fA-F]{6}")
 class SensorData:
     temperature: float
     pressure_hpa: float
-    humidity: float
+    humidity: Optional[float]
 
 
 class DemoHardware:
@@ -87,7 +88,7 @@ def make_server(host, port, hardware):
                         values = {
                             "temperature": str(round(data.temperature)),
                             "pressure": str(round(data.pressure_hpa / 1.33322387415)),
-                            "humidity": str(round(data.humidity)),
+                            "humidity": "unavailable" if data.humidity is None else str(round(data.humidity)),
                             "weather": weather_forecast(data.pressure_hpa),
                         }
                         body = values[command]

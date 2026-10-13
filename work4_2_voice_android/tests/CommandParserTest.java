@@ -43,6 +43,13 @@ public final class CommandParserTest {
         if (!SpeechResponses.forCommand("000000", "000000").contains("off")) {
             throw new AssertionError("Off command must not be described as on");
         }
-        System.out.println("PASS: " + checks + " command phrases and 2 spoken responses");
+        String noHumidity = SpeechResponses.forCommand("humidity", "unavailable");
+        if (!noHumidity.contains("does not measure humidity") || noHumidity.contains("percent")) {
+            throw new AssertionError("BMP280 must not report missing humidity as a measurement");
+        }
+        if (!SpeechResponses.forCommand("humidity", "45").contains("45 percent")) {
+            throw new AssertionError("BME280 humidity must remain a real measurement");
+        }
+        System.out.println("PASS: " + checks + " command phrases and 4 spoken responses");
     }
 }

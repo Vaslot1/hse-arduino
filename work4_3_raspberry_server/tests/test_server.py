@@ -41,6 +41,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.get("/pressure"), (200, "760"))
         self.assertEqual(self.get("/humidity"), (200, "45"))
 
+    def test_bmp280_keeps_other_commands_working_without_fake_humidity(self):
+        self.hardware.data = self.module.SensorData(23.0, 1013.25, None)
+        self.assertEqual(self.get("/temperature"), (200, "23"))
+        self.assertEqual(self.get("/pressure"), (200, "760"))
+        self.assertEqual(self.get("/humidity"), (200, "unavailable"))
+        self.assertEqual(self.get("/weather"), (200, "the weather will be cloudy"))
+        self.assertEqual(self.get("/FF0000"), (200, "FF0000"))
+
     def test_weather_thresholds_use_hpa(self):
         for pressure, expected in [
             (1022.69, "the weather will be stable"),

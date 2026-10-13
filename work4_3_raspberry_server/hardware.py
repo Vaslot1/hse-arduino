@@ -1,8 +1,32 @@
 """Аппаратная часть. Импортируется только при запуске без --demo."""
 
 from pathlib import Path
+import logging
+from time import sleep
 
 from server import SensorData
+
+
+def create_sensor(i2c, address):
+    chip_id = bytearray(1)
+    while not i2c.try_lock():
+        sleep(0.001)
+    try:
+        i2c.writeto_then_readfrom(address, b'\xd0', chip_id)
+    finally:
+        i2c.unlock()
+    if chip_id[0] == 0x60:
+        from adafruit_bme280 import basic as bme280
+        return bme280.Adafruit_BME280_I2C(i2c, address=address), 'BME280'
+    if chip_id[0] == 0x58:
+        import adafruit_bmp280
+        return adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=address), 'BMP280'
+    raise RuntimeError(f'Unsupported sensor chip ID {chip_id[0]:#x} at I2C address {address:#x}; expected BME280 (0x60) or BMP280 (0x58)')
+
+
+def sample_sensor(sensor, kind):
+    humidity = sensor.relative_humidity if kind == 'BME280' else None
+    return SensorData(sensor.temperature, sensor.pressure, humidity)
 
 
 class RaspberryHardware:
@@ -10,13 +34,13 @@ class RaspberryHardware:
 
     def __init__(self, address, count, brightness, backend):
         import board
-        from adafruit_bme280 import basic as bme280
 
         self.i2c = board.I2C()
         self.spi = None
         self.pixels = None
         try:
-            self.sensor = bme280.Adafruit_BME280_I2C(self.i2c, address=address)
+            self.sensor, self.sensor_type = create_sensor(self.i2c, address)
+            logging.getLogger('voicehome').info('Detected %s at I2C address %#x', self.sensor_type, address)
             if backend == "spi":
                 import neopixel_spi
 
@@ -39,7 +63,7 @@ class RaspberryHardware:
             raise
 
     def read_sensor(self):
-        return SensorData(self.sensor.temperature, self.sensor.pressure, self.sensor.relative_humidity)
+        return sample_sensor(self.sensor, self.sensor_type)
 
     def set_color(self, color):
         self.pixels.fill(color)

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Умный дом — работа 4</string>
     <string name="title">Голосовое управление</string>
-    <string name="subtitle">Raspberry Pi 5 · BME280 · WS2812B</string>
+    <string name="subtitle">Raspberry Pi 5 · BME280 / BMP280 · WS2812B</string>
     <string name="server_label">Адрес Raspberry Pi</string>
     <string name="talk">Говорить · Talk</string>
     <string name="examples">Команды на английском:\nTell me the sensor data\nWhat is the weather?\nTurn on the lights, color red\nTurn off the lights</string>

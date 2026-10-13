@@ -1,6 +1,6 @@
 # Работа 4, пункт 3 — сервер Raspberry Pi 5
 
-Сервер читает BME280 и управляет WS2812B. По умолчанию используется **SPI**:
+Сервер читает BME280 или BMP280 и управляет WS2812B. По умолчанию используется **SPI**:
 данные ленты идут с **GPIO10, физический контакт 19**. Для схемы из методички
 с **GPIO18, физический контакт 12** предусмотрен отдельный режим **PIO**.
 
@@ -20,7 +20,18 @@
 а SDO задаёт адрес 0x76 или 0x77. По умолчанию сервер использует 0x76;
 фактический адрес проверяется ниже.
 
-BMP280 не измеряет влажность; этот проект настроен на выбранный вами **BME280**.
+Тип датчика определяется автоматически по регистру идентификатора чипа:
+**0x60 — BME280**, **0x58 — BMP280**. Оба датчика подключаются к той же шине
+I2C и измеряют температуру и давление. BME280 также измеряет влажность;
+BMP280 её не измеряет.
+
+При BMP280 запрос `/humidity` возвращает `unavailable`, а обновлённое
+Android-приложение озвучивает: «This sensor does not measure humidity».
+Температура, давление, прогноз и управление лентой продолжают работать.
+Влажность не подменяется нулём или случайным значением.
+
+**0x58 — идентификатор чипа, а не I2C-адрес.** В параметре `--address`
+используется адрес из `i2cdetect`, обычно **0x76** или **0x77**.
 
 ## 2. Подключение ленты — основной вариант SPI
 
@@ -96,7 +107,7 @@ python3 -m venv --system-site-packages .venv
 До запуска сервера проверьте аппаратные библиотеки тем же Python:
 
 ```bash
-.venv/bin/python -c "import lgpio, board, neopixel_spi; from adafruit_bme280 import basic; print('Hardware libraries OK')"
+.venv/bin/python -c "import lgpio, board, neopixel_spi, adafruit_bmp280; from adafruit_bme280 import basic; print('Hardware libraries OK')"
 ```
 
 Если установка завершилась ошибкой `Failed to build installable wheels ...
@@ -110,7 +121,7 @@ python3 -m venv --system-site-packages .venv
 .venv/bin/python -c "import lgpio; print(lgpio.__file__)"
 .venv/bin/python -m pip install --upgrade pip setuptools wheel
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -c "import board, neopixel_spi; from adafruit_bme280 import basic; print('Hardware libraries OK')"
+.venv/bin/python -c "import board, neopixel_spi, adafruit_bmp280; from adafruit_bme280 import basic; print('Hardware libraries OK')"
 ```
 
 Повторная команда `venv` включает доступ к системным пакетам в существующем
@@ -209,10 +220,27 @@ cd ~/Downloads/hse-arduino-main/work4_3_raspberry_server
 Проверьте адрес командой `hostname -I`. При настройке использовался
 `http://10.167.32.100:8000/`; если IP изменился, обновите адрес на телефоне.
 
-Android-приложение после исправления HTTP-сервера не менялось. Один раз
+Исправление HTTP-соединения не требует изменений Android-приложения. Один раз
 закройте его из списка недавних приложений и откройте снова, чтобы очистить
 старое соединение. После обычных перезагрузок Raspberry Pi достаточно
-запустить сервер; пересборка или переустановка приложения не требуется.
+запустить сервер. При переходе на версию с поддержкой BMP280 обновите
+приложение через Run в Android Studio: новая версия корректно озвучивает
+отсутствие измерения влажности.
+
+### Обновление для BMP280
+
+Обновите файлы проекта из GitHub. Если проект был скачан архивом, скопируйте
+новые `server.py`, `hardware.py` и `requirements.txt` в прежнюю папку сервера,
+сохранив существующее окружение `.venv`. Затем в этой папке выполните:
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python server.py --led-backend pio --address 0x76 --pixels 8
+```
+
+Перед запуском обновлённого сервера остановите прежний. Команда выше относится
+к ленте на GPIO18; для ленты на GPIO10 используется `--led-backend spi`.
+В журнале запуска появится `Detected BMP280` или `Detected BME280`.
 
 ## 6. Проверка HTTP
 
@@ -233,7 +261,7 @@ curl http://127.0.0.1:8000/000000
 |---|---|
 | /temperature | Температура, округлённая до целых °C |
 | /pressure | Давление, округлённое до целых мм рт. ст. |
-| /humidity | Влажность, округлённая до целых % |
+| /humidity | Влажность BME280 в целых %; для BMP280 — `unavailable` |
 | /weather | Английская фраза учебного прогноза |
 | /RRGGBB | Установленный цвет в HEX |
 | /random | Фактически выбранный случайный цвет в HEX |
@@ -241,8 +269,8 @@ curl http://127.0.0.1:8000/000000
 
 Также поддерживается формат из объяснения методички:
 `http://IP:8000/?params=temperature`. Неизвестная команда даёт HTTP 404,
-ошибка чтения датчика или управления лентой — HTTP 503. Влажность не
-подменяется значением от BMP280. Тестовый режим не включается автоматически
+ошибка чтения датчика или управления лентой — HTTP 503. Для BMP280 отсутствие
+влажности не считается ошибкой; ответ содержит `unavailable`. Тестовый режим не включается автоматически
 при ошибке оборудования.
 
 Сервер явно передаёт заголовок `Connection: close`: после ответа HTTP/1.0
@@ -251,7 +279,7 @@ curl http://127.0.0.1:8000/000000
 успешные запросы чередуются с `unexpected end of stream`. Если используется
 старая копия `server.py`, обновите файл и перезапустите сервер.
 
-Драйвер BME280 возвращает давление в **hPa**. Для ответа `/pressure` оно
+Драйверы BME280 и BMP280 возвращают давление в **hPa**. Для ответа `/pressure` оно
 переводится в мм рт. ст., а для `/weather` сравнивается с 1022.69 и 1009.14 hPa
 из методички. Это учебное правило по одному измерению.
 
@@ -278,5 +306,6 @@ python -m unittest discover -s tests -v
 - [NeoPixel на Pi 5: PIO и SPI](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5)
 - [API NeoPixel SPI](https://docs.circuitpython.org/projects/neopixel_spi/en/latest/api.html)
 - [API BME280 и единицы давления](https://docs.circuitpython.org/projects/bme280/en/latest/api.html)
+- [API BMP280](https://docs.circuitpython.org/projects/bmp280/en/latest/api.html)
 - [Подключение и преобразование уровня](https://learn.adafruit.com/neopixels-on-raspberry-pi/raspberry-pi-wiring)
 - [Готовый lgpio для Raspberry Pi OS](https://github.com/adafruit/lgpio-python-wheels#alternative-apt-raspberry-pi-os-only)

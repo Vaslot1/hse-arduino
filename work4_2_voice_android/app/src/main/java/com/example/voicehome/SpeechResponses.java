@@ -8,7 +8,10 @@ public final class SpeechResponses {
         switch (command) {
             case "temperature": return "Current temperature is " + body + " degrees Celsius.";
             case "pressure": return "Current pressure is " + body + " millimeters of mercury.";
-            case "humidity": return "Current humidity is " + body + " percent.";
+            case "humidity":
+                return "unavailable".equals(body)
+                        ? "This sensor does not measure humidity."
+                        : "Current humidity is " + body + " percent.";
             case "weather": return "Current weather forecast is: " + body + ".";
             case "000000": return "The lights are off.";
             case "FF0000": return "The color is set to red.";
