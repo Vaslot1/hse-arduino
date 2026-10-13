@@ -1,0 +1,4 @@
+Adafruit-Blinka>=8.50,<9
+adafruit-circuitpython-bme280>=2.6,<3
+adafruit-circuitpython-neopixel-spi>=1.0,<2
+rpi-lgpio>=0.6,<1

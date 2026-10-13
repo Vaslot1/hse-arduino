@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Умный дом — работа 4</string>
+    <string name="title">Голосовое управление</string>
+    <string name="subtitle">Raspberry Pi 5 · BME280 · WS2812B</string>
+    <string name="server_label">Адрес Raspberry Pi</string>
+    <string name="talk">Говорить · Talk</string>
+    <string name="examples">Команды на английском:\nTell me the sensor data\nWhat is the weather?\nTurn on the lights, color red\nTurn off the lights</string>
+    <string name="ready">Нажмите Talk и произнесите команду.</string>
+    <string name="recognized_empty">Распознанная фраза появится здесь.</string>
+    <string name="recognition_prompt">Say a command in English</string>
+    <string name="recognition_missing">Распознавание речи недоступно. Установите или включите приложение Google и распознавание английской речи.</string>
+    <string name="recognition_cancelled">Голосовой ввод отменён. Нажмите Talk ещё раз.</string>
+    <string name="recognition_empty">Речь не распознана. Попробуйте ещё раз.</string>
+    <string name="command_unknown">Команда не найдена. Используйте примеры выше.</string>
+    <string name="invalid_address">Укажите адрес вида http://192.168.1.100:8000/ без пути и параметров.</string>
+    <string name="loading">Запрашиваю Raspberry Pi…</string>
+    <string name="tts_missing">Английский синтез речи недоступен. Установите английский голос в настройках озвучивания телефона. Ответы показаны на экране.</string>
+    <string name="http_error">Сервер ответил HTTP %1$d: %2$s</string>
+    <string name="network_error">Не удалось связаться с сервером. Проверьте IP, Wi-Fi и запуск server.py.</string>
+</resources>

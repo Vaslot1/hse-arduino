@@ -1,0 +1,3 @@
+-r requirements.txt
+Adafruit-Blinka-Raspberry-Pi5-Neopixel
+adafruit-circuitpython-pixelbuf>=2,<3
