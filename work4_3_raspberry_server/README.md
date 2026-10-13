@@ -65,7 +65,7 @@ sudo raspi-config
 
 ```bash
 sudo apt update
-sudo apt install -y python3-venv python3-dev i2c-tools
+sudo apt install -y python3-venv python3-dev python3-lgpio i2c-tools
 sudo usermod -aG i2c,spi,gpio "$USER"
 ```
 
@@ -84,10 +84,45 @@ ls -l /dev/i2c-1 /dev/spidev0.0
 
 ```bash
 cd ~/work4_3_raspberry_server
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -r requirements.txt
 ```
+
+`python3-lgpio` устанавливает готовый драйвер из репозитория Raspberry Pi OS.
+Флаг `--system-site-packages` позволяет окружению `.venv` использовать этот
+драйвер, вместо попытки собрать `lgpio` из исходников через pip.
+
+До запуска сервера проверьте аппаратные библиотеки тем же Python:
+
+```bash
+.venv/bin/python -c "import lgpio, board, neopixel_spi; from adafruit_bme280 import basic; print('Hardware libraries OK')"
+```
+
+Если установка завершилась ошибкой `Failed to build installable wheels ...
+lgpio`, а сервер пишет `No module named 'board'`, выполните восстановление
+из уже скопированной папки сервера:
+
+```bash
+sudo apt update
+sudo apt install -y python3-lgpio python3-venv python3-dev
+python3 -m venv --system-site-packages .venv
+.venv/bin/python -c "import lgpio; print(lgpio.__file__)"
+.venv/bin/python -m pip install --upgrade pip setuptools wheel
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -c "import board, neopixel_spi; from adafruit_bme280 import basic; print('Hardware libraries OK')"
+```
+
+Повторная команда `venv` включает доступ к системным пакетам в существующем
+окружении; удалять `.venv` не нужно. Если любой шаг заканчивается ошибкой,
+остановитесь на нём и сохраните полный текст ошибки. Для поиска причины
+сбоя сборки нужны строки перед финальным `Failed to build`, а также версии
+`python3 --version` и `.venv/bin/python --version`.
+
+Модуль `board` входит в **Adafruit-Blinka**. Отдельный пакет `board` через
+pip устанавливать не нужно. Установка и запуск выполняются одним и тем же
+интерпретатором `.venv/bin/python`; запуск через другой Python или Thonny
+может снова дать `No module named 'board'`.
 
 ## 4. Запуск сервера через SPI
 
@@ -186,6 +221,12 @@ curl http://127.0.0.1:8000/000000
 подменяется значением от BMP280. Тестовый режим не включается автоматически
 при ошибке оборудования.
 
+Сервер явно передаёт заголовок `Connection: close`: после ответа HTTP/1.0
+соединение закрывается. Это важно для OkHttp 3.6.0 из методички. Без заголовка
+эта версия клиента может повторно использовать уже закрытый сокет, и тогда
+успешные запросы чередуются с `unexpected end of stream`. Если используется
+старая копия `server.py`, обновите файл и перезапустите сервер.
+
 Драйвер BME280 возвращает давление в **hPa**. Для ответа `/pressure` оно
 переводится в мм рт. ст., а для `/weather` сравнивается с 1022.69 и 1009.14 hPa
 из методички. Это учебное правило по одному измерению.
@@ -214,3 +255,4 @@ python -m unittest discover -s tests -v
 - [API NeoPixel SPI](https://docs.circuitpython.org/projects/neopixel_spi/en/latest/api.html)
 - [API BME280 и единицы давления](https://docs.circuitpython.org/projects/bme280/en/latest/api.html)
 - [Подключение и преобразование уровня](https://learn.adafruit.com/neopixels-on-raspberry-pi/raspberry-pi-wiring)
+- [Готовый lgpio для Raspberry Pi OS](https://github.com/adafruit/lgpio-python-wheels#alternative-apt-raspberry-pi-os-only)

@@ -94,6 +94,11 @@ class ServerTests(unittest.TestCase):
         with socket.create_connection(("127.0.0.1", self.server.server_port), timeout=2):
             self.assertEqual(self.get("/temperature"), (200, "23"))
 
+    def test_response_tells_clients_not_to_reuse_closed_connection(self):
+        # OkHttp 3.6.0 иначе возвращает закрытый HTTP/1.0 сокет в пул.
+        with urlopen(self.base + "/temperature", timeout=3) as response:
+            self.assertEqual(response.headers.get("Connection"), "close")
+
 
 if __name__ == "__main__":
     unittest.main()
