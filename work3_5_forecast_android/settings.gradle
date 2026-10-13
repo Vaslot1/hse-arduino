@@ -1,0 +1,18 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // mavenCentral первым: dl.google.com из этой сети недоступен,
+        // а volley/androidx есть на Maven Central
+        mavenCentral()
+        google()
+    }
+}
+rootProject.name = "WeatherForecast"
+include ':app'

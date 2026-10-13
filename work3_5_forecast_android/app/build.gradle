@@ -1,0 +1,33 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.weatherforecast'
+    compileSdk 36
+    // в SDK установлены только build-tools 36.0.0, иначе AGP 8.7.3 тянет 34.0.0
+    buildToolsVersion '36.0.0'
+
+    defaultConfig {
+        applicationId "com.example.weatherforecast"
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+// coroutines 1.6.4 (из appcompat) тянут kotlin-stdlib-jdk8/jdk7 1.6.21,
+// которые дублируют классы kotlin-stdlib 1.8.22 -> исключаем старые
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+
+    // Работа 3: HTTP-клиент для ThingSpeak REST API
+    implementation 'com.android.volley:volley:1.2.1'
+}

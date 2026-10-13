@@ -1,0 +1,5 @@
+// Top-level build file
+plugins {
+    // AGP 8.x, как в остальных работах (в AGP 9 флаг android.enableJetifier удалён)
+    id 'com.android.application' version '8.7.3' apply false
+}
