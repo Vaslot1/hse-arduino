@@ -1,0 +1,37 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.weatherstation'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.weatherstation"
+        minSdk 24
+        // targetSdk именно 30 (по методичке): paho 1.1.1 давно не обновлялась
+        // и не имеет кода для API 31+ (exported-флаги, PendingIntent)
+        targetSdk 30
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+// kotlin-stdlib-jdk8/jdk7:1.6.21 транзитивно приходят от paho (mqttv3 и
+// android.service) и дублируют классы из kotlin-stdlib:1.8.22 (appcompat).
+// Это устаревшие пустые артефакты-прокладки - исключаем их глобально.
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+
+    // MQTT-клиент Eclipse Paho (зависимости из методички)
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+    // Update 06.02.2026 из методички
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+}

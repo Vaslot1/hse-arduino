@@ -1,0 +1,6 @@
+// Top-level build file
+plugins {
+    // AGP 8.x, а не 9.x: в AGP 9 флаг android.enableJetifier удалён,
+    // а он нужен для старой библиотеки paho android.service:1.1.1
+    id 'com.android.application' version '8.7.3' apply false
+}
